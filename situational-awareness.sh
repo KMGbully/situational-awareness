@@ -72,7 +72,7 @@ echo "Performing Discovery..."
 subnet=$(echo $network_addr/$cidr)
 clear
 echo "Performing Discovery..."
-gw_ip=$(ip route | head -n 1 | awk '{print $3}')
+gw_ip=$(ip route | grep 'default via' | awk '{print $3}')
 clear
 echo "Performing Discovery..."
 externalip=$(curl ipv4.icanhazip.com)
