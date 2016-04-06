@@ -57,7 +57,7 @@ clear
 fi
 #Discovery and parsing
 echo "Performing Discovery..."
-internal_ip=$(ifconfig $interface | grep 'inet addr:' | tr -d 'addr:' | awk '{print $2}')
+internal_ip=$(ifconfig $interface | grep 'inet' | head -n 1 | tr -d 'addr:' | awk '{print $2}')
 clear
 echo "Performing Discovery..."
 network_addr=$(echo $internal_ip | sed 's/\.[0-9]*$/.0/')
