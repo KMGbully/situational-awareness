@@ -1,6 +1,6 @@
 # situational-awareness v2
 
-Performs network discovery by identifying:
+Performs network discovery by identifying:<br>
 -domain name<br>
 -domain controllers<br>
 -dns servers<br>
