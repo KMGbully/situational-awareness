@@ -79,7 +79,7 @@ echo "Performing Discovery..."
 gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')
 clear
 echo "Performing Discovery..."
-externalip=$(curl ipv4.icanhazip.com)
+externalip=$(curl --interface $interface ipv4.icanhazip.com)
 clear
 echo "Performing Discovery..."
 dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)
