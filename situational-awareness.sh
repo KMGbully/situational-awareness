@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 #
-# Situational Awareness
+# Situational Awarenessv3
 # Kevin Gilstrap
 # kevin.gilstrap@sungardas.com
 # Sr. Information Security Consultant
 # Sungard Availability Services
-# April 3, 2016
+# April 20, 2016
 #
 #
 # Function calculates number of bit in a netmask
@@ -33,82 +33,82 @@ mask2cidr() {
 # Must be ran with sudo
 clear
 if [ "$(whoami)" != "root" ]; then
-clear
-echo "Please run as root"
+  echo "Please run as root"
 exit
 fi
+# Checks for interface input
+if [ -z "$1" ]; then
+  echo "[*] Usage:  situational-awareness <interface>"
+  exit 0
+fi
+if [ $1 = "--help" ]; then
+  echo "[*] Usage:  situational-awareness <interface>"
+  exit 0
+fi
+if [ $1 = "-h" ]; then
+  echo "[*] Usage:  situational-awareness <interface>"
+  exit 0
+fi
+
 # Auto-install dependencies
 echo "Verifying dependencies are installed..."
 apt-get install nbtscan arp-scan nmap -y
 clear
-# Asks for users input
-echo -n "Enter interface name: [ex:  eth0]:  "
-read interface
-clear
-echo -n "Would you like to renew the interface? [y/n]:  "
-read renew
-clear
 # Renews interface to get DHCP info
-if [ $renew = "y" ]; then
-echo "Renewing interface..."
-dhclient $interface
-clear
-fi
+echo Renewing interface... $1
+dhclient $1  # comment this out if you do not want to renew the interface
 
 #Discovery and parsing (Brennon Stovall removed the need to use 'head -n 1')
-echo "Performing Discovery..."
-internal_ip=$(ifconfig $interface | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')
+echo "Performing Discovery... INTERNAL IP"
+internal_ip=$(ifconfig $1 | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')
 clear
 #Getting the Netmask (Brennon Stovall removed the need to use 'head -n 1')
-echo "Performing Discovery..."
-netmask=$(ifconfig $interface | grep 'inet\b' | tr -d 'Mask:' | awk '{print $4}')
+echo "Performing Discovery...NETMASK"
+netmask=$(ifconfig $1 | grep 'inet\b' | tr -d 'Mask:' | awk '{print $4}')
 clear
-echo "Performing Discovery..."
+echo "Performing Discovery...CIDR"
 cidr=$(mask2cidr $netmask)
 clear
 #Calculates the Network Address using bitwise AND (Added by Brennon Stovall)
-echo "Performing Discovery..."
+echo "Performing Discovery...NETWORK ADDRESS"
 IFS=. read -r i1 i2 i3 i4 <<< "$internal_ip"
 IFS=. read -r m1 m2 m3 m4 <<< "$netmask"
 network_addr=$(printf "%d.%d.%d.%d\n" "$((i1 & m1))" "$((i2 & m2))" "$((i3 & m3))" "$((i4 & m4))")
 clear
-echo "Performing Discovery..."
+echo "Performing Discovery...SUBNET"
 subnet=$(echo $network_addr/$cidr)
 clear
-echo "Performing Discovery..."
+echo "Performing Discovery...GATEWAY"
 gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')
 clear
-echo "Performing Discovery..."
-externalip=$(curl --interface $interface ipv4.icanhazip.com)
+echo "Performing Discovery...EXTERNAL IP"
+externalip=$(curl -s ipv4.icanhazip.com)
 clear
-echo "Performing Discovery..."
+echo "Performing Discovery...DNS SERVERS"
 dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)
 clear
-echo "Performing Discovery..."
+echo "Performing Discovery...DOMAIN NAME"
 domain=$(awk '{if(/search/) print $2}' /etc/resolv.conf)
 clear
-echo "Performing Discovery..."
-domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}')
+echo "Performing Discovery...DOMAIN CONTROLLERS"
+domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)
 if [[ -z "$domaincontrollers" ]]; then
-domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}')
+domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)
 fi
 if [[ -z "$domaincontrollers" ]]; then
-domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}')
+domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)
 fi
 clear
-echo "Performing Discovery..."
-smbtree -N | tee fileshares.tmp
-clear
-echo "Performing Discovery..."
+echo "Performing Discovery...HOST DISCOVERY - PING SWEEP"
 nmap -sn -PS -n $networks | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
 clear
-echo "Performing Discovery..."
-nbtscan -r $subnet | grep -A 9999 $network_addr | awk '{print $1}' | tr -d 'IP' | tail -n +5 | tee -a hosts.tmp
+echo "Performing Discovery...HOST DISCOVERY - NETBIOS SCAN"
+nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
 clear
-echo "Performing Discovery..."
-arp-scan $subnet | tail -n +3 | grep -B 9999 '^$' | awk '{print $1}' | tee -a hosts.tmp
+echo "Performing Discovery...HOST DISCOVERY - ARP SCAN"
+arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
 clear
-echo "Performing Discovery..."
+echo "Performing Discovery...PARSING HOST DISCOVERY RESULTS"
 sort -u hosts.tmp | sed '/^\s*$/d' | tee hosts.txt
 clear
 echo "Situational Awareness Complete"
@@ -141,9 +141,7 @@ echo $(tput setaf 7)DNS Servers:  $(tput setaf 3)$dnsserver | tee -a networkinfo
 echo $(tput setaf 7)External IP Address:  $(tput setaf 3)$externalip | tee -a networkinfo.txt
 echo $(tput setaf 7)Domain Controllers:  $(tput setaf 3)$domaincontrollers | tee -a networkinfo.txt
 echo "$(tput setaf 7)Hosts: $(tput setaf 3)" | tee -a networkinfo.txt
-cat hosts.txt | tee -a networkinfo.txt
-echo "$(tput setaf 7)File Shares:  $(tput setaf 3)" | tee -a networkinfo.txt 
-cat fileshares.tmp | tee -a networkinfo.txt
+sort -n -t. +0 -1 +1 -2 +2 -3 +3 -4 hosts.txt | uniq -u | tee -a networkinfo.txt
 echo "$(tput setaf 7)"
 echo "$(tput setaf 7)Scan has been appeneded to situationalawareness.log"
 echo "$(tput setaf 2)--------------------------------------------------------$(tput setaf 7)" | tee -a networkinfo.txt
