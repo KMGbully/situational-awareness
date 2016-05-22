@@ -1,4 +1,4 @@
-# situational-awareness v2
+# situational-awareness v3
 
 Performs network discovery by identifying:<br>
 -domain name<br>
@@ -12,5 +12,3 @@ Performs network discovery by identifying:<br>
 -gateway<br>
 -file shares<br>
 -hosts<br>
-
-Thanks to Brennon Stovall for adding the network address functionality and making a couple of the functions more efficient.
