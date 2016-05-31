@@ -10,5 +10,4 @@ Performs network discovery by identifying:<br>
 -subnet mask<br>
 -network cidr<br>
 -gateway<br>
--file shares<br>
 -hosts<br>
