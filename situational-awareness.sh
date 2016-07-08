@@ -57,11 +57,15 @@ clear
 # Renews interface to get DHCP info
 echo Renewing interface... $1
 dhclient $1  # comment this out if you do not want to renew the interface
+clear
 
 #Discovery and parsing (Brennon Stovall removed the need to use 'head -n 1')
 echo "Performing Discovery... INTERNAL IP"
 internal_ip=$(ifconfig $1 | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')
+echo 'internal_ip=$(ifconfig $1 | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')' && echo $internal_ip
+gnome-screenshot -w -f internal_ip.png
 clear
+
 #Getting the Netmask (Brennon Stovall removed the need to use 'head -n 1')
 echo "Performing Discovery...NETMASK"
 netmask=$(ifconfig $1 | grep 'inet\b' | tr -d 'Mask:' | awk '{print $4}')
@@ -80,33 +84,49 @@ subnet=$(echo $network_addr/$cidr)
 clear
 echo "Performing Discovery...GATEWAY"
 gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')
+echo 'gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')' && echo $gw_ip
+gnome-screenshot -w -f gw.png
 clear
 echo "Performing Discovery...EXTERNAL IP"
 externalip=$(curl -s ipv4.icanhazip.com)
+echo 'externalip=$(curl -s ipv4.icanhazip.com)' && echo $external_ip
+gnome-screenshot -w -f external_ip.png
 clear
 echo "Performing Discovery...DNS SERVERS"
 dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)
+echo 'dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)' && echo $dnsserver
+gnome-screenshot -w -f dnsservers.png
 clear
 echo "Performing Discovery...DOMAIN NAME"
 domain=$(awk '{if(/search/) print $2}' /etc/resolv.conf)
+echo 'domain=$(awk '{if(/search/) print $2}' /etc/resolv.conf)' && echo $domain
+gnome-screenshot -w -f domain_name.png
 clear
 echo "Performing Discovery...DOMAIN CONTROLLERS"
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)
+echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
+gnome-screenshot -w -f domain_controllers.png
 if [[ -z "$domaincontrollers" ]]; then
+rm -rf domain_controllers.png
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)
+echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
+gnome-screenshot -w -f domain_controllers.png
 fi
 if [[ -z "$domaincontrollers" ]]; then
+rm -rf domain_controllers.png
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)
+echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
+gnome-screenshot -w -f domain_controllers.png
 fi
 clear
 echo "Performing Discovery...HOST DISCOVERY - PING SWEEP"
-nmap -sn -PS -n $networks | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
+gnome-screenshot -w -d 2 -f ping_sweep.png && nmap -sn -PS -n $networks | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
 clear
 echo "Performing Discovery...HOST DISCOVERY - NETBIOS SCAN"
-nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
+gnome-screenshot -w -d 2 -f nbtscan.png && nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
 clear
 echo "Performing Discovery...HOST DISCOVERY - ARP SCAN"
-arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
+gnome-screenshot -w -d 2 -f arp_scan.png && arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
 clear
 echo "Performing Discovery...PARSING HOST DISCOVERY RESULTS"
 sort -u hosts.tmp | sed '/^\s*$/d' | tee hosts.txt
