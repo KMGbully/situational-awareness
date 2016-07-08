@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 #
-# Situational Awarenessv3
+# Situational Awarenessv4
 # Kevin Gilstrap
 # kevin.gilstrap@sungardas.com
 # Sr. Information Security Consultant
 # Sungard Availability Services
-# April 20, 2016
+# July 8, 2016
 #
 #
 # Function calculates number of bit in a netmask
@@ -89,18 +89,15 @@ gnome-screenshot -w -f gw.png
 clear
 echo "Performing Discovery...EXTERNAL IP"
 externalip=$(curl -s ipv4.icanhazip.com)
-echo 'externalip=$(curl -s ipv4.icanhazip.com)' && echo $external_ip
+echo 'externalip=$(curl -s ipv4.icanhazip.com)' && echo $externalip
 gnome-screenshot -w -f external_ip.png
 clear
 echo "Performing Discovery...DNS SERVERS"
 dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)
-echo 'dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)' && echo $dnsserver
-gnome-screenshot -w -f dnsservers.png
+cat /etc/resolv.conf && gnome-screenshot -w -f dnsservers_domain.png
 clear
 echo "Performing Discovery...DOMAIN NAME"
 domain=$(awk '{if(/search/) print $2}' /etc/resolv.conf)
-echo 'domain=$(awk '{if(/search/) print $2}' /etc/resolv.conf)' && echo $domain
-gnome-screenshot -w -f domain_name.png
 clear
 echo "Performing Discovery...DOMAIN CONTROLLERS"
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)
@@ -108,25 +105,30 @@ echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk 
 gnome-screenshot -w -f domain_controllers.png
 if [[ -z "$domaincontrollers" ]]; then
 rm -rf domain_controllers.png
+clear
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)
 echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
 gnome-screenshot -w -f domain_controllers.png
 fi
 if [[ -z "$domaincontrollers" ]]; then
 rm -rf domain_controllers.png
+clear
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)
 echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
 gnome-screenshot -w -f domain_controllers.png
 fi
 clear
 echo "Performing Discovery...HOST DISCOVERY - PING SWEEP"
-gnome-screenshot -w -d 2 -f ping_sweep.png && nmap -sn -PS -n $networks | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
+nmap -sn -PS -n $subnet | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
+gnome-screenshot -w -f ping_sweep.png
 clear
 echo "Performing Discovery...HOST DISCOVERY - NETBIOS SCAN"
-gnome-screenshot -w -d 2 -f nbtscan.png && nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
+nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
+gnome-screenshot -w -f nbtscan.png
 clear
 echo "Performing Discovery...HOST DISCOVERY - ARP SCAN"
-gnome-screenshot -w -d 2 -f arp_scan.png && arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
+arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
+gnome-screenshot -w -f arpscan.png
 clear
 echo "Performing Discovery...PARSING HOST DISCOVERY RESULTS"
 sort -u hosts.tmp | sed '/^\s*$/d' | tee hosts.txt
@@ -134,18 +136,23 @@ clear
 echo "Situational Awareness Complete"
 if [[ -z "$gw_ip" ]]; then
 gw_ip="Could not determine gateway"
+rm -rf gw.png
 fi
 if [[ -z "$externalip" ]]; then
 externalip="Could not resolve external address"
+rm -rf external_ip.png
 fi
 if [[ -z "$domaincontrollers" ]]; then
 domaincontrollers="No domain controllers were found"
+rm -rf domain_controllers.png
 fi
 if [[ -z "$dnsserver" ]]; then
 dnsserver="No DNS servers were found"
+rm -rf dnsservers_domain.png
 fi
 if [[ -z "$internal_ip" ]]; then
 internal_ip="No IP Address assigned to interface"
+rm -rf internal_ip.png
 fi
 if [[ -z "$domain" ]]; then
 domain="Domain name not found"
