@@ -13,5 +13,5 @@ Performs network discovery and takes screenshots of the following:<br>
 -hosts<br>
 <br><br>
 
-[*] Usage:  situational-awareness <interface> <br>
-[*] Host Discovery:  situational-awareness <interface> --host
+Usage:  situational-awareness [interface] <br>
+Host Discovery:  situational-awareness [interface] --host
