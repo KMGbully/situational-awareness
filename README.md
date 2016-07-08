@@ -11,3 +11,7 @@ Performs network discovery and takes screenshots of the following:<br>
 -network cidr<br>
 -gateway<br>
 -hosts<br>
+<br><br>
+
+[*] Usage:  situational-awareness <interface>
+[*] Host Discovery:  situational-awareness <interface> --host
