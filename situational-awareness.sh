@@ -65,7 +65,7 @@ clear
 #Discovery and parsing (Brennon Stovall removed the need to use 'head -n 1')
 echo "Performing Discovery... INTERNAL IP"
 internal_ip=$(ifconfig $1 | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')
-echo 'internal_ip=$(ifconfig $1 | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')' && echo $internal_ip
+echo "ifconfig "$1" | grep 'inet\b' | tr -d 'addr:' | cut -d ' ' -f2" && echo $internal_ip
 gnome-screenshot -w -f internal_ip.png
 clear
 
@@ -87,16 +87,17 @@ subnet=$(echo $network_addr/$cidr)
 clear
 echo "Performing Discovery...GATEWAY"
 gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')
-echo 'gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')' && echo $gw_ip
+echo "ip route | grep 'default via' | head -n 1 | cut -d ' ' -f3)" && echo $gw_ip
 gnome-screenshot -w -f gw.png
 clear
 echo "Performing Discovery...EXTERNAL IP"
 externalip=$(curl -s ipv4.icanhazip.com)
-echo 'externalip=$(curl -s ipv4.icanhazip.com)' && echo $externalip
+echo "curl -s ipv4.icanhazip.com" && echo $externalip
 gnome-screenshot -w -f external_ip.png
 clear
 echo "Performing Discovery...DNS SERVERS"
 dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)
+echo "cat /etc/resolv.conf"
 cat /etc/resolv.conf && gnome-screenshot -w -f dnsservers_domain.png
 clear
 echo "Performing Discovery...DOMAIN NAME"
@@ -104,33 +105,36 @@ domain=$(awk '{if(/search/) print $2}' /etc/resolv.conf)
 clear
 echo "Performing Discovery...DOMAIN CONTROLLERS"
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)
-echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
+echo "nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1" && echo $domaincontrollers
 gnome-screenshot -w -f domain_controllers.png
 if [[ -z "$domaincontrollers" ]]; then
 rm -rf domain_controllers.png
 clear
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)
-echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
+echo "nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1" && echo $domaincontrollers
 gnome-screenshot -w -f domain_controllers.png
 fi
 if [[ -z "$domaincontrollers" ]]; then
 rm -rf domain_controllers.png
 clear
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)
-echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
+echo "nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1" && echo $domaincontrollers
 gnome-screenshot -w -f domain_controllers.png
 fi
 if [[ $2 = "--host" ]]; then
 clear
 echo "Performing Discovery...HOST DISCOVERY - PING SWEEP"
+echo nmap -sn -PS -n $subnet
 nmap -sn -PS -n $subnet | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
 gnome-screenshot -w -f ping_sweep.png
 clear
 echo "Performing Discovery...HOST DISCOVERY - NETBIOS SCAN"
+echo nbtscan -q $subnet
 nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
 gnome-screenshot -w -f nbtscan.png
 clear
 echo "Performing Discovery...HOST DISCOVERY - ARP SCAN"
+echo arp-scan -q -I $1 --localnet
 arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
 gnome-screenshot -w -f arpscan.png
 clear
