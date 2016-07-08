@@ -39,20 +39,23 @@ fi
 # Checks for interface input
 if [ -z "$1" ]; then
   echo "[*] Usage:  situational-awareness <interface>"
+  echo "[*] Host Discovery:  situational-awareness <interface> --host"
   exit 0
 fi
 if [ $1 = "--help" ]; then
   echo "[*] Usage:  situational-awareness <interface>"
+  echo "[*] Host Discovery:  situational-awareness <interface> --host"
   exit 0
 fi
 if [ $1 = "-h" ]; then
   echo "[*] Usage:  situational-awareness <interface>"
+  echo "[*] Host Discovery:  situational-awareness <interface> --host"
   exit 0
 fi
 
 # Auto-install dependencies
 echo "Verifying dependencies are installed..."
-apt-get install nbtscan arp-scan nmap -y
+apt-get install nbtscan arp-scan nmap gnome-screenshot -y
 clear
 # Renews interface to get DHCP info
 echo Renewing interface... $1
@@ -117,6 +120,7 @@ domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk 
 echo 'domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)' && echo $domaincontrollers
 gnome-screenshot -w -f domain_controllers.png
 fi
+if [[ $2 = "--host" ]]; then
 clear
 echo "Performing Discovery...HOST DISCOVERY - PING SWEEP"
 nmap -sn -PS -n $subnet | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
@@ -132,6 +136,7 @@ gnome-screenshot -w -f arpscan.png
 clear
 echo "Performing Discovery...PARSING HOST DISCOVERY RESULTS"
 sort -u hosts.tmp | sed '/^\s*$/d' | tee hosts.txt
+fi
 clear
 echo "Situational Awareness Complete"
 if [[ -z "$gw_ip" ]]; then
@@ -167,16 +172,19 @@ echo $(tput setaf 7)Network CIDR:  $(tput setaf 3)$subnet | tee -a networkinfo.t
 echo $(tput setaf 7)DNS Servers:  $(tput setaf 3)$dnsserver | tee -a networkinfo.txt
 echo $(tput setaf 7)External IP Address:  $(tput setaf 3)$externalip | tee -a networkinfo.txt
 echo $(tput setaf 7)Domain Controllers:  $(tput setaf 3)$domaincontrollers | tee -a networkinfo.txt
+if [[ -n "$2" ]]; then
 echo "$(tput setaf 7)Hosts: $(tput setaf 3)" | tee -a networkinfo.txt
 sort -n -t. +0 -1 +1 -2 +2 -3 +3 -4 hosts.txt | uniq -u | tee -a networkinfo.txt
+fi
 echo "$(tput setaf 7)"
 echo "$(tput setaf 7)Scan has been appeneded to situationalawareness.log"
 echo "$(tput setaf 2)--------------------------------------------------------$(tput setaf 7)" | tee -a networkinfo.txt
 # Appends output to log file
 cat networkinfo.txt >> situationalawareness.log
 # Clean-up of files
+if [[ -n "$2" ]]; then
 rm -rf hosts.tmp
 rm -rf hosts.txt
-rm -rf fileshares.tmp
 rm -rf networkinfo.txt
+fi
 exit
