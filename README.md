@@ -1,6 +1,6 @@
-# situational-awareness v3
+# situational-awareness v4
 
-Performs network discovery by identifying:<br>
+Performs network discovery and takes screenshots of the following:<br>
 -domain name<br>
 -domain controllers<br>
 -dns servers<br>
