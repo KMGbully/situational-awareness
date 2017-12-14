@@ -55,7 +55,7 @@ fi
 
 # Auto-install dependencies
 echo "Verifying dependencies are installed..."
-apt-get install nbtscan arp-scan nmap gnome-screenshot -y
+apt-get install nbtscan arp-scan nmap -y
 clear
 # Renews interface to get DHCP info
 echo Renewing interface... $1
@@ -66,7 +66,6 @@ clear
 echo "Performing Discovery... INTERNAL IP"
 internal_ip=$(ifconfig $1 | grep 'inet\b' | tr -d 'addr:' | awk '{print $2}')
 echo "ifconfig "$1" | grep 'inet\b' | tr -d 'addr:' | cut -d ' ' -f2" && echo $internal_ip
-gnome-screenshot -w -f internal_ip.png
 clear
 
 #Getting the Netmask (Brennon Stovall removed the need to use 'head -n 1')
@@ -88,12 +87,10 @@ clear
 echo "Performing Discovery...GATEWAY"
 gw_ip=$(ip route | grep 'default via' | head -n 1 | awk '{print $3}')
 echo "ip route | grep 'default via' | head -n 1 | cut -d ' ' -f3)" && echo $gw_ip
-gnome-screenshot -w -f gw.png
 clear
 echo "Performing Discovery...EXTERNAL IP"
 externalip=$(curl -s ipv4.icanhazip.com)
 echo "curl -s ipv4.icanhazip.com" && echo $externalip
-gnome-screenshot -w -f external_ip.png
 clear
 echo "Performing Discovery...DNS SERVERS"
 dnsserver=$(awk '{if(/nameserver/) print $2}' /etc/resolv.conf)
@@ -106,37 +103,31 @@ clear
 echo "Performing Discovery...DOMAIN CONTROLLERS"
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1)
 echo "nslookup -type=srv _ldap._tcp.dc._msdcs.$domain | awk '{print $7}' | cut -d "." -f1" && echo $domaincontrollers
-gnome-screenshot -w -f domain_controllers.png
 if [[ -z "$domaincontrollers" ]]; then
 rm -rf domain_controllers.png
 clear
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1)
 echo "nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.com | awk '{print $7}' | cut -d "." -f1" && echo $domaincontrollers
-gnome-screenshot -w -f domain_controllers.png
 fi
 if [[ -z "$domaincontrollers" ]]; then
 rm -rf domain_controllers.png
 clear
 domaincontrollers=$(nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1)
 echo "nslookup -type=srv _ldap._tcp.dc._msdcs.$domain.local | awk '{print $7}' | cut -d "." -f1" && echo $domaincontrollers
-gnome-screenshot -w -f domain_controllers.png
 fi
 if [[ $2 = "--host" ]]; then
 clear
 echo "Performing Discovery...HOST DISCOVERY - PING SWEEP"
 echo nmap -sn -PS -n $subnet
 nmap -sn -PS -n $subnet | grep 'Nmap scan' | awk '{print $5}' | tee hosts.tmp
-gnome-screenshot -w -f ping_sweep.png
 clear
 echo "Performing Discovery...HOST DISCOVERY - NETBIOS SCAN"
 echo nbtscan -q $subnet
 nbtscan -q $subnet | awk '{print $1}' | tee -a hosts.tmp
-gnome-screenshot -w -f nbtscan.png
 clear
 echo "Performing Discovery...HOST DISCOVERY - ARP SCAN"
 echo arp-scan -q -I $1 --localnet
 arp-scan -q -I $1 --localnet | awk '{print $1}' | tail -n +3 | head -n -3 | tee -a hosts.tmp
-gnome-screenshot -w -f arpscan.png
 clear
 echo "Performing Discovery...PARSING HOST DISCOVERY RESULTS"
 sort -u hosts.tmp | sed '/^\s*$/d' | tee hosts.txt
@@ -145,23 +136,18 @@ clear
 echo "Situational Awareness Complete"
 if [[ -z "$gw_ip" ]]; then
 gw_ip="Could not determine gateway"
-rm -rf gw.png
 fi
 if [[ -z "$externalip" ]]; then
 externalip="Could not resolve external address"
-rm -rf external_ip.png
 fi
 if [[ -z "$domaincontrollers" ]]; then
 domaincontrollers="No domain controllers were found"
-rm -rf domain_controllers.png
 fi
 if [[ -z "$dnsserver" ]]; then
 dnsserver="No DNS servers were found"
-rm -rf dnsservers_domain.png
 fi
 if [[ -z "$internal_ip" ]]; then
 internal_ip="No IP Address assigned to interface"
-rm -rf internal_ip.png
 fi
 if [[ -z "$domain" ]]; then
 domain="Domain name not found"
